@@ -30,7 +30,7 @@ async function run() {
 
     const labels: string[] = [];
     for (const [label, [globs, status]] of labelGlobs.entries()) {
-      core.debug(`processing ${label}`);
+      core.debug(`processing ${label} (${globs} | ${status})`);
       if (checkGlobs(changedFiles, globs, status)) {
         labels.push(label);
       }
@@ -88,7 +88,6 @@ async function getLabelGlobs(
 
   // loads (hopefully) a `{[label:string]: string | string[]}`, but is `any`:
   const configObject: any = yaml.safeLoad(configurationContent);
-  core.debug(configObject);
 
   // transform `any` => `Map<string,string[]>` or throw if yaml is malformed:
   return getLabelGlobMapFromObject(configObject);
