@@ -119,11 +119,8 @@ function getLabelGlobMapFromObject(
       const globs: string[] = [];
       let status: string[] = ALL_STATUS;
       for (const temp in configObject[label]) {
-        core.debug(`temp is ${temp}`);
         if (typeof configObject[label][temp] === "string") {
-          core.debug(`parsing labels before (${globs}) (${temp})`);
           globs.push(configObject[label][temp]);
-          core.debug(`parsing labels after (${globs})`);
         } else if (typeof configObject[label][temp]["on"] === "string") {
           status = [configObject[label][temp]["on"]];
         } else if (Array.isArray(configObject[label][temp]["on"])) {
@@ -149,7 +146,7 @@ function checkGlobs(
   status: string[]
 ): boolean {
   for (const glob of globs) {
-    core.debug(` checking pattern ${glob} and status ${status}`);
+    core.debug(` checking pattern ${glob} for status [${status}]`);
     const matcher = new Minimatch(glob);
     for (const changedFile of changedFiles) {
       core.debug(` - ${changedFile.filename}`);
