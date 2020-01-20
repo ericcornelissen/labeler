@@ -3,6 +3,8 @@ import * as github from '@actions/github';
 import * as yaml from 'js-yaml';
 import {Minimatch} from 'minimatch';
 
+interface File { filename: string, status: string };
+
 async function run() {
   try {
     const token = core.getInput('repo-token', {required: true});
@@ -17,7 +19,7 @@ async function run() {
     const client = new github.GitHub(token);
 
     core.debug(`fetching changed files for pr #${prNumber}`);
-    const changedFiles: string[] = await getChangedFiles(client, prNumber);
+    const changedFiles: File[] = await getChangedFiles(client, prNumber);
     const labelGlobs: Map<string, string[]> = await getLabelGlobs(
       client,
       configPath
@@ -52,18 +54,21 @@ function getPrNumber(): number | undefined {
 async function getChangedFiles(
   client: github.GitHub,
   prNumber: number
-): Promise<string[]> {
+): Promise<File[]> {
   const listFilesResponse = await client.pulls.listFiles({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     pull_number: prNumber
   });
 
-  const changedFiles = listFilesResponse.data.map(f => f.filename);
+  const changedFiles = listFilesResponse.data.map(f => ({
+    filename: f.filename,
+    status: f.status
+  }));
 
   core.debug('found changed files:');
   for (const file of changedFiles) {
-    core.debug('  ' + file);
+    core.debug(`  ${file.filename} (${file.status})`);
   }
 
   return changedFiles;
@@ -116,14 +121,14 @@ function getLabelGlobMapFromObject(configObject: any): Map<string, string[]> {
   return labelGlobs;
 }
 
-function checkGlobs(changedFiles: string[], globs: string[]): boolean {
+function checkGlobs(changedFiles: File[], globs: string[]): boolean {
   for (const glob of globs) {
     core.debug(` checking pattern ${glob}`);
     const matcher = new Minimatch(glob);
     for (const changedFile of changedFiles) {
-      core.debug(` - ${changedFile}`);
-      if (matcher.match(changedFile)) {
-        core.debug(` ${changedFile} matches`);
+      core.debug(` - ${changedFile.filename}`);
+      if (matcher.match(changedFile.filename)) {
+        core.debug(` ${changedFile.filename} matches`);
         return true;
       }
     }
