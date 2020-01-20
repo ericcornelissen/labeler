@@ -1,18 +1,21 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
-import * as yaml from 'js-yaml';
-import {Minimatch} from 'minimatch';
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import * as yaml from "js-yaml";
+import { Minimatch } from "minimatch";
 
-interface File { filename: string, status: string };
+interface File {
+  filename: string;
+  status: string;
+}
 
 async function run() {
   try {
-    const token = core.getInput('repo-token', {required: true});
-    const configPath = core.getInput('configuration-path', {required: true});
+    const token = core.getInput("repo-token", { required: true });
+    const configPath = core.getInput("configuration-path", { required: true });
 
     const prNumber = getPrNumber();
     if (!prNumber) {
-      console.log('Could not get pull request number from context, exiting');
+      console.log("Could not get pull request number from context, exiting");
       return;
     }
 
@@ -20,15 +23,15 @@ async function run() {
 
     core.debug(`fetching changed files for pr #${prNumber}`);
     const changedFiles: File[] = await getChangedFiles(client, prNumber);
-    const labelGlobs: Map<string, string[]> = await getLabelGlobs(
+    const labelGlobs: Map<string, [string[], string[]]> = await getLabelGlobs(
       client,
       configPath
     );
 
     const labels: string[] = [];
-    for (const [label, globs] of labelGlobs.entries()) {
+    for (const [label, [globs, status]] of labelGlobs.entries()) {
       core.debug(`processing ${label}`);
-      if (checkGlobs(changedFiles, globs)) {
+      if (checkGlobs(changedFiles, globs, status)) {
         labels.push(label);
       }
     }
@@ -66,7 +69,7 @@ async function getChangedFiles(
     status: f.status
   }));
 
-  core.debug('found changed files:');
+  core.debug("found changed files:");
   for (const file of changedFiles) {
     core.debug(`  ${file.filename} (${file.status})`);
   }
@@ -77,7 +80,7 @@ async function getChangedFiles(
 async function getLabelGlobs(
   client: github.GitHub,
   configurationPath: string
-): Promise<Map<string, string[]>> {
+): Promise<Map<string, [string[], string[]]>> {
   const configurationContent: string = await fetchContent(
     client,
     configurationPath
@@ -85,6 +88,7 @@ async function getLabelGlobs(
 
   // loads (hopefully) a `{[label:string]: string | string[]}`, but is `any`:
   const configObject: any = yaml.safeLoad(configurationContent);
+  core.debug(configObject);
 
   // transform `any` => `Map<string,string[]>` or throw if yaml is malformed:
   return getLabelGlobMapFromObject(configObject);
@@ -101,16 +105,32 @@ async function fetchContent(
     ref: github.context.sha
   });
 
-  return Buffer.from(response.data.content, 'base64').toString();
+  return Buffer.from(response.data.content, "base64").toString();
 }
 
-function getLabelGlobMapFromObject(configObject: any): Map<string, string[]> {
-  const labelGlobs: Map<string, string[]> = new Map();
+const ALL_STATUS: string[] = ["added", "modified"];
+function getLabelGlobMapFromObject(
+  configObject: any
+): Map<string, [string[], string[]]> {
+  const labelGlobs: Map<string, [string[], string[]]> = new Map();
   for (const label in configObject) {
-    if (typeof configObject[label] === 'string') {
-      labelGlobs.set(label, [configObject[label]]);
+    if (typeof configObject[label] === "string") {
+      labelGlobs.set(label, [configObject[label], ALL_STATUS]);
     } else if (configObject[label] instanceof Array) {
-      labelGlobs.set(label, configObject[label]);
+      const globs: string[] = [];
+      let status: string[] = ALL_STATUS;
+      for (const temp in configObject[label]) {
+        if (typeof temp === "string") {
+          globs.push(temp);
+        } else if (typeof temp["on"] === "string") {
+          status = [temp["on"]];
+        } else if (Array.isArray(temp["on"])) {
+          status = temp["on"];
+        } else {
+          throw Error(`found unexpected ...`);
+        }
+      }
+      labelGlobs.set(label, [globs, status]);
     } else {
       throw Error(
         `found unexpected type for label ${label} (should be string or array of globs)`
@@ -121,15 +141,22 @@ function getLabelGlobMapFromObject(configObject: any): Map<string, string[]> {
   return labelGlobs;
 }
 
-function checkGlobs(changedFiles: File[], globs: string[]): boolean {
+function checkGlobs(
+  changedFiles: File[],
+  globs: string[],
+  status: string[]
+): boolean {
   for (const glob of globs) {
     core.debug(` checking pattern ${glob}`);
     const matcher = new Minimatch(glob);
     for (const changedFile of changedFiles) {
       core.debug(` - ${changedFile.filename}`);
       if (matcher.match(changedFile.filename)) {
-        core.debug(` ${changedFile.filename} matches`);
-        return true;
+        core.debug(` ${changedFile.filename} matches glob`);
+        if (status.includes(changedFile.status)) {
+          core.debug(` ${changedFile.filename} matches status`);
+          return true;
+        }
       }
     }
   }
