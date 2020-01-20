@@ -3,6 +3,8 @@ import * as github from '@actions/github';
 import * as yaml from 'js-yaml';
 import {Minimatch} from 'minimatch';
 
+interface File { filename: string, status: string };
+
 async function run() {
   try {
     const token = core.getInput('repo-token', {required: true});
@@ -17,7 +19,7 @@ async function run() {
     const client = new github.GitHub(token);
 
     core.debug(`fetching changed files for pr #${prNumber}`);
-    const changedFiles: string[] = await getChangedFiles(client, prNumber);
+    const changedFiles: File[] = await getChangedFiles(client, prNumber);
     const labelGlobs: Map<string, string[]> = await getLabelGlobs(
       client,
       configPath
@@ -52,7 +54,7 @@ function getPrNumber(): number | undefined {
 async function getChangedFiles(
   client: github.GitHub,
   prNumber: number
-): Promise<string[]> {
+): Promise<File[]> {
   const listFilesResponse = await client.pulls.listFiles({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
@@ -119,7 +121,7 @@ function getLabelGlobMapFromObject(configObject: any): Map<string, string[]> {
   return labelGlobs;
 }
 
-function checkGlobs(changedFiles: string[], globs: string[]): boolean {
+function checkGlobs(changedFiles: File[], globs: string[]): boolean {
   for (const glob of globs) {
     core.debug(` checking pattern ${glob}`);
     const matcher = new Minimatch(glob);
