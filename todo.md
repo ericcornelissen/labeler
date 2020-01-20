@@ -1,6 +1,0 @@
-- [x] Create issue for feature in original repository
-- [x] Detect new files vs. updated files
-- [x] Apply different label based on previous detection
-- [x] Make previous point configurable
-- [x] Make "all" (new/update(/remove)) the default
-- [x] Add support for remove
