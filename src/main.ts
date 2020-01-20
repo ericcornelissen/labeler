@@ -114,13 +114,15 @@ function getLabelGlobMapFromObject(
   const labelGlobs: Map<string, [string[], string[]]> = new Map();
   for (const label in configObject) {
     if (typeof configObject[label] === "string") {
-      labelGlobs.set(label, [configObject[label], ALL_STATUS]);
+      labelGlobs.set(label, [[configObject[label]], ALL_STATUS]);
     } else if (configObject[label] instanceof Array) {
       const globs: string[] = [];
       let status: string[] = ALL_STATUS;
       for (const temp in configObject[label]) {
         if (typeof temp === "string") {
+          core.debug(`parsing labels before (${globs}) (${temp})`);
           globs.push(temp);
+          core.debug(`parsing labels after (${globs})`);
         } else if (typeof temp["on"] === "string") {
           status = [temp["on"]];
         } else if (Array.isArray(temp["on"])) {
