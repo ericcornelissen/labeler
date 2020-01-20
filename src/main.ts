@@ -119,6 +119,7 @@ function getLabelGlobMapFromObject(
       const globs: string[] = [];
       let status: string[] = ALL_STATUS;
       for (const temp in configObject[label]) {
+        core.debug(`temp is ${temp}`);
         if (typeof temp === "string") {
           core.debug(`parsing labels before (${globs}) (${temp})`);
           globs.push(temp);
