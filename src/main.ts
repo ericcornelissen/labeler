@@ -59,11 +59,14 @@ async function getChangedFiles(
     pull_number: prNumber
   });
 
-  const changedFiles = listFilesResponse.data.map(f => f.filename);
+  const changedFiles = listFilesResponse.data.map(f => ({
+    filename: f.filename,
+    status: f.status
+  }));
 
   core.debug('found changed files:');
   for (const file of changedFiles) {
-    core.debug('  ' + file);
+    core.debug(`  ${file.filename} (${file.status})`);
   }
 
   return changedFiles;
@@ -121,9 +124,9 @@ function checkGlobs(changedFiles: string[], globs: string[]): boolean {
     core.debug(` checking pattern ${glob}`);
     const matcher = new Minimatch(glob);
     for (const changedFile of changedFiles) {
-      core.debug(` - ${changedFile}`);
-      if (matcher.match(changedFile)) {
-        core.debug(` ${changedFile} matches`);
+      core.debug(` - ${changedFile.filename}`);
+      if (matcher.match(changedFile.filename)) {
+        core.debug(` ${changedFile.filename} matches`);
         return true;
       }
     }
