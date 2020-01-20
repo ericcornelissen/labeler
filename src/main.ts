@@ -120,14 +120,14 @@ function getLabelGlobMapFromObject(
       let status: string[] = ALL_STATUS;
       for (const temp in configObject[label]) {
         core.debug(`temp is ${temp}`);
-        if (typeof temp === "string") {
+        if (typeof configObject[label][temp] === "string") {
           core.debug(`parsing labels before (${globs}) (${temp})`);
-          globs.push(temp);
+          globs.push(configObject[label][temp]);
           core.debug(`parsing labels after (${globs})`);
-        } else if (typeof temp["on"] === "string") {
-          status = [temp["on"]];
-        } else if (Array.isArray(temp["on"])) {
-          status = temp["on"];
+        } else if (typeof configObject[label][temp]["on"] === "string") {
+          status = [configObject[label][temp]["on"]];
+        } else if (Array.isArray(configObject[label][temp]["on"])) {
+          status = configObject[label][temp]["on"];
         } else {
           throw Error(`found unexpected ...`);
         }
@@ -149,16 +149,16 @@ function checkGlobs(
   status: string[]
 ): boolean {
   for (const glob of globs) {
-    core.debug(` checking pattern ${glob}`);
+    core.debug(` checking pattern ${glob} and status ${status}`);
     const matcher = new Minimatch(glob);
     for (const changedFile of changedFiles) {
       core.debug(` - ${changedFile.filename}`);
-      if (matcher.match(changedFile.filename)) {
-        core.debug(` ${changedFile.filename} matches glob`);
-        if (status.includes(changedFile.status)) {
-          core.debug(` ${changedFile.filename} matches status`);
-          return true;
-        }
+      if (
+        matcher.match(changedFile.filename) &&
+        status.includes(changedFile.status)
+      ) {
+        core.debug(` ${changedFile.filename} matches glob and status`);
+        return true;
       }
     }
   }
