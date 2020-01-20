@@ -3,6 +3,7 @@ import * as github from "@actions/github";
 import * as yaml from "js-yaml";
 import { Minimatch } from "minimatch";
 
+const ALL_STATUS: string[] = ["added", "modified", "removed"];
 interface File {
   filename: string;
   status: string;
@@ -107,7 +108,6 @@ async function fetchContent(
   return Buffer.from(response.data.content, "base64").toString();
 }
 
-const ALL_STATUS: string[] = ["added", "modified"];
 function getLabelGlobMapFromObject(
   configObject: any
 ): Map<string, [string[], string[]]> {
