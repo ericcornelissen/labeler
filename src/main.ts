@@ -1,7 +1,7 @@
-import * as core from "@actions/core";
-import * as github from "@actions/github";
-import * as yaml from "js-yaml";
-import { Minimatch } from "minimatch";
+import * as core from '@actions/core';
+import * as github from '@actions/github';
+import * as yaml from 'js-yaml';
+import {Minimatch} from 'minimatch';
 
 const ALL_STATUS: string[] = ["added", "modified", "removed"];
 interface File {
@@ -11,12 +11,12 @@ interface File {
 
 async function run() {
   try {
-    const token = core.getInput("repo-token", { required: true });
-    const configPath = core.getInput("configuration-path", { required: true });
+    const token = core.getInput('repo-token', {required: true});
+const configPath = core.getInput('configuration-path', {required: true});
 
     const prNumber = getPrNumber();
     if (!prNumber) {
-      console.log("Could not get pull request number from context, exiting");
+            console.log('Could not get pull request number from context, exiting');
       return;
     }
 
@@ -113,7 +113,7 @@ function getLabelGlobMapFromObject(
 ): Map<string, [string[], string[]]> {
   const labelGlobs: Map<string, [string[], string[]]> = new Map();
   for (const label in configObject) {
-    if (typeof configObject[label] === "string") {
+    if (typeof configObject[label] === 'string') {
       labelGlobs.set(label, [[configObject[label]], ALL_STATUS]);
     } else if (configObject[label] instanceof Array) {
       const globs: string[] = [];
