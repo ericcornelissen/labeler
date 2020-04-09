@@ -1,5 +1,5 @@
-name: 'Pull Request Labeler'
-description: 'Label pull requests by files altered'
+name: 'Labeler'
+description: 'Add labels to new pull requests based on the files that are changed'
 author: 'GitHub'
 inputs: 
   repo-token:
@@ -9,4 +9,4 @@ inputs:
     default: '.github/labeler.yml'
 runs:
   using: 'node12'
-  main: 'lib/main.js'
+  main: 'dist/index.js'
