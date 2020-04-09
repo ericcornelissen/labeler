@@ -12,11 +12,11 @@ interface File {
 async function run() {
   try {
     const token = core.getInput('repo-token', {required: true});
-const configPath = core.getInput('configuration-path', {required: true});
+    const configPath = core.getInput('configuration-path', {required: true});
 
     const prNumber = getPrNumber();
     if (!prNumber) {
-            console.log('Could not get pull request number from context, exiting');
+      console.log('Could not get pull request number from context, exiting');
       return;
     }
 
@@ -70,7 +70,7 @@ async function getChangedFiles(
     status: f.status
   }));
 
-  core.debug("found changed files:");
+  core.debug('found changed files:');
   for (const file of changedFiles) {
     core.debug(`  ${file.filename} (${file.status})`);
   }
